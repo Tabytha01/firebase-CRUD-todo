@@ -1,65 +1,176 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useEffect, useMemo, useState } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "./firebase";
+import Protected from "./components/Protected";
+import type { Task } from "../lib/types";
+import {
+  createTask,
+  deleteTask,
+  subscribeUserTasks,
+  updateTask,
+} from "../lib/tasks";
+
+export default function Dashboard() {
+  const [email, setEmail] = useState<string | null>(null);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [priority, setPriority] = useState<Task["priority"]>("Low");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      const userEmail = user?.email ?? null;
+      setEmail(userEmail);
+      if (userEmail) {
+        return subscribeUserTasks(userEmail, setTasks);
+      }
+      return undefined;
+    });
+    return () => unsub();
+  }, []);
+
+  const isEditing = useMemo(() => !!editingId, [editingId]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email) return;
+    setError(null);
+    try {
+      if (editingId) {
+        await updateTask(editingId, { title, description, priority });
+        setEditingId(null);
+      } else {
+        const newTask: Omit<Task, "id"> = {
+          title,
+          description,
+          priority,
+          completed: false,
+          userEmail: email,
+        };
+        await createTask(newTask);
+      }
+      setTitle("");
+      setDescription("");
+      setPriority("Low");
+    } catch (err: any) {
+      setError(err?.message ?? "Failed to save task");
+    }
+  }
+
+  async function toggleCompleted(task: Task) {
+    try {
+      await updateTask(task.id, { completed: !task.completed });
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  function startEdit(task: Task) {
+    setEditingId(task.id);
+    setTitle(task.title);
+    setDescription(task.description);
+    setPriority(task.priority);
+  }
+
+  async function removeTask(id: string) {
+    try {
+      await deleteTask(id);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <Protected>
+      <main className="max-w-3xl mx-auto px-4 py-8">
+        <h1 className="text-2xl font-semibold mb-4">
+          {email ? `Hello, ${email}` : "Dashboard"}
+        </h1>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3 mb-6">
+          {error && (
+            <div className="text-sm text-red-600" role="alert">{error}</div>
+          )}
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Title"
+            className="border rounded px-3 py-2"
+            required
+          />
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Description"
+            className="border rounded px-3 py-2"
+            required
+          />
+          <select
+            value={priority}
+            onChange={(e) => setPriority(e.target.value as Task["priority"])}
+            className="border rounded px-3 py-2"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+          </select>
+          <button
+            type="submit"
+            className="rounded bg-black text-white px-3 py-2 dark:bg-white dark:text-black"
           >
-            Documentation
-          </a>
-        </div>
+            {isEditing ? "Update Task" : "Add Task"}
+          </button>
+        </form>
+
+        <section className="space-y-3">
+          {tasks.map((t) => (
+            <div
+              key={t.id}
+              className="border rounded p-3 flex items-start justify-between gap-4"
+            >
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={t.completed}
+                    onChange={() => toggleCompleted(t)}
+                  />
+                  <span className="font-semibold">{t.title}</span>
+                  <span className="text-xs px-2 py-0.5 rounded bg-black/10 dark:bg-white/10">
+                    {t.priority}
+                  </span>
+                </div>
+                <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
+                  {t.description}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  className="text-sm underline"
+                  onClick={() => startEdit(t)}
+                >
+                  Edit
+                </button>
+                <button
+                  className="text-sm text-red-600 underline"
+                  onClick={() => removeTask(t.id)}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+          {tasks.length === 0 && (
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              No tasks yet. Add one above.
+            </p>
+          )}
+        </section>
       </main>
-    </div>
+    </Protected>
   );
 }
