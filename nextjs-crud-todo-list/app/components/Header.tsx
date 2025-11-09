@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import Link from "next/link";
-import { auth } from "../firebase";
+import { auth } from "../../lib/firebase.js";
 
 export default function Header() {
   const [email, setEmail] = useState<string | null>(null);

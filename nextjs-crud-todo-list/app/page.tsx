@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "./firebase";
+import { auth } from "../lib/firebase.js";
 import Protected from "./components/Protected";
 import type { Task } from "../lib/types";
 import {
