@@ -1,5 +1,5 @@
 // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 // If you want Analytics in the browser, you can enable it guarded by `window`.
@@ -17,8 +17,8 @@ const firebaseConfig = {
   measurementId: "G-BWLVNDXZ90"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase (guard against re-initialization in dev/hot-reload)
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 // Optionally enable analytics only in the browser:
