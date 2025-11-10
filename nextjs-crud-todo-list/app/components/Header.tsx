@@ -16,9 +16,9 @@ export default function Header() {
   }, []);
 
   return (
-    <header className="w-full border-b border-black/10 dark:border-white/10">
+    <header className="w-full bg-[#772F37] border-b text-white dark:border-white/10">
       <div className="max-w-3xl mx-auto flex items-center justify-between px-4 py-3">
-        <Link href="/" className="font-semibold">Task App</Link>
+        <Link href="/" className="font-bold">Task App</Link>
         {email ? (
           <div className="flex items-center gap-3">
             <span className="text-sm text-zinc-600 dark:text-zinc-400">{email}</span>
