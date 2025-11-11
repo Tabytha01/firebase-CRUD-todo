@@ -120,7 +120,7 @@ export default function Dashboard() {
           </select>
           <button
             type="submit"
-            className="rounded bg-black text-white px-3 py-2 dark:bg-white dark:text-black"
+            className="rounded bg-[#FFFBFO] text-white px-3 py-2 dark:bg-white dark:text-white"
           >
             {isEditing ? "Update Task" : "Add Task"}
           </button>

@@ -24,7 +24,7 @@ export default function Header() {
             <span className="text-sm text-zinc-600 dark:text-zinc-400">{email}</span>
             <button
               onClick={() => signOut(auth)}
-              className="rounded bg-black text-white px-3 py-1 text-sm dark:bg-white dark:text-black"
+              className="rounded bg-[#OF1A2B ] text-white px-3 py-1 text-sm dark:bg-white dark:text-white"
             >
               Logout
             </button>
